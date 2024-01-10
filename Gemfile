@@ -8,6 +8,10 @@ group :development, :test do
   gem 'pry-byebug'
   gem 'pry-doc'
   gem 'pry-nav'
+
+  require 'pry'
+  require 'pry-nav'
+
   gem 'rubocop'
   gem 'ruby-lsp'
 end

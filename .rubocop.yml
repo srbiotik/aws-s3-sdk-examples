@@ -1,2 +1,6 @@
+AllCops:
+  TargetRubyVersion: 3.2.2
 Metrics/MethodLength:
+  Enabled: false
+Style/HashSyntax:
   Enabled: false

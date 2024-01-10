@@ -1,0 +1,8 @@
+{
+    "rubyLsp.rubyExecutablePath": "/Users/milos/.rvm/rubies/ruby-3.2.2/bin/ruby",
+    "rubyLsp.useBundlerCompose": false,
+    "rubyLsp.branch": "",
+    "rubyLsp.enableExperimentalFeatures": false,
+    "rubyLsp.rubyVersionManager": "rvm",
+    "rubyLsp.bundleGemfile": "Gemfile"
+}

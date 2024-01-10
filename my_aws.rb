@@ -15,7 +15,10 @@ class MyAWS
         region: ENV['REGION']
       }
     )
+    @bucket = ENV['AWS_BUCKET']
     @client = Aws::S3::Client.new
+    @part_size = 5 * 1024 * 1024 # 5 MB
+    @parts = []
   end
 
   # List Bucket Objects
@@ -36,47 +39,39 @@ class MyAWS
     @client.get_object(bucket: ENV['AWS_BUCKET'], key:)
   end
 
-  # Implements multi-part file upload
-  # @param [String] file
+  # Implements multi-part file upload, which is a three step process:
+  # Create the multi-part upload and get an upload ID
+  # Break down the upload file into smaller chunks and upload each chunk, storing the returned ETag for each chunk
+  # Complete the multi-part upload using the upload ID and ETags to identify the chunks that compose the file
+  # @param [String] file_name
   # @param [String] key
   # @raise [Aws::S3::Errors::ServiceError]
   # @return [void]
-  def multi_part_upload(file, key)
-    create_multipart_upload_response = @client.create_multipart_upload(ENV['AWS_BUCKET'], key:)
-    upload_id = create_multipart_upload_response.upload_id
+  def multi_part_upload(file_name, key)
+    # TODO: Check if bucket has permissions to upload in multi-part
+    bucket = ENV['AWS_BUCKET']
+    multipart_upload = @client.create_multipart_upload(bucket:, key:)
+    upload_id = multipart_upload.upload_id
 
-    File.open(file, 'rb') do |file_data|
+    File.open(file_name, 'rb') do |file_data|
       part_number = 1
-      while (body = file_data.read(5 * 1024 * 1024))
-        @client.upload_part(
-          bucket: ENV['AWS_BUCKET'],
-          key:,
-          part_number:,
-          upload_id:,
-          body:
-        )
+      while (body = file_data.read(@part_size))
+        response = @client.upload_part({ bucket:, key:, part_number:, upload_id:, body: })
+        etag = response.etag
+        @parts << { etag:, part_number: }
+        puts "Uploaded part #{part_number} with etag #{etag}"
         part_number += 1
       end
     end
 
     complete_multipart_upload_response = @client.complete_multipart_upload(
-      bucket: ENV['AWS_BUCKET'],
+      bucket:,
       upload_id:,
       key:,
       multipart_upload: {
-        parts: create_part_list(upload_id)
+        parts: @parts
       }
     )
-  end
-
-  private
-
-  def create_part_list(upload_id)
-    list_parts_response = @client.list_parts(
-      bucket: ENV['AWS_BUCKET'],
-      key:,
-      upload_id:
-    )
-    list_parts_response.parts.map(&:part_number)
+    puts complete_multipart_upload_response
   end
 end
